@@ -1,115 +1,138 @@
-import os
-import pyodbc
-import random
+import pygame
+import sys
 from config import *
 
-db_file = 'Animal-Database.accdb'
+class GameMenu:
+    def __init__(self):
+        pygame.init()
+        self.screen_width, self.screen_height = screen_width, screen_height
+        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+        self.background = pygame.image.load(background_image)
+        self.background = pygame.transform.scale(self.background, (self.screen_width, self.screen_height))
+        self.black = (0, 0, 0)
+        self.white = (255, 255, 255)
+        self.font = pygame.font.Font(None, font_size)
+        self.menu_options = menu_options
+        self.option_functions = {
+            'Start': self.start_game,
+            'Options': lambda: print("Option Settings"),
+            'Exit': sys.exit
+        }
+        self.option_rects = []
 
-# Used to verify the database file path
-if not os.path.exists(db_file):
-    print(f"Warning: The database file {db_file} does not exist in the current directory.")
-    exit()
+    def draw_menu(self):
+        self.screen.blit(self.background, (0, 0))
+        self.option_rects.clear()
+        menu_height = len(self.menu_options) * 50
+        start_y = (self.screen_height - menu_height) // 2
 
-# Connect to the database
-conn_str = (
-    r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
-    rf'DBQ={os.path.abspath(db_file)};'
-)
-conn = pyodbc.connect(conn_str)
-cursor = conn.cursor()
+        for i, option in enumerate(self.menu_options):
+            text = self.font.render(option, True, self.black)
+            text_x = self.screen_width // 2 - text.get_width() // 2
+            text_y = start_y + i * 50
+            text_rect = text.get_rect(center=(self.screen_width // 2, text_y))
+            self.option_rects.append(text_rect)
+            self.screen.blit(text, text_rect.topleft)
+        pygame.display.flip()
 
-def fetch_animals():
-    cursor.execute('SELECT * FROM Animals')
-    columns = [column[0] for column in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    def start_game(self):
+        game = AnimalAkinator(self.screen, self.font)
+        game.display_question()
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    x, y = pygame.mouse.get_pos()
+                    if game.yes_button_rect.collidepoint(x, y):
+                        game.handle_answer("yes")
+                    elif game.no_button_rect.collidepoint(x, y):
+                        game.handle_answer("no")
+                pygame.display.update()
 
-def calculate_conditional_probabilities(animals):
-    attribute_probabilities = {}
-    total_animals = len(animals)
 
-    for animal in animals:
-        for attribute, value in animal.items():
-            if attribute not in attribute_probabilities:
-                attribute_probabilities[attribute] = {"true": 0, "false": 0}
-            if value:
-                attribute_probabilities[attribute]["true"] += 1
-            else:
-                attribute_probabilities[attribute]["false"] += 1
+    def main_menu(self):
+        while True:
+            self.draw_menu()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    x, y = pygame.mouse.get_pos()
+                    for rect, option in zip(self.option_rects, self.menu_options):
+                        if rect.collidepoint(x, y):
+                            self.option_functions[option]()
 
-    for attribute, counts in attribute_probabilities.items():
-        attribute_probabilities[attribute]["true"] /= total_animals
-        attribute_probabilities[attribute]["false"] /= total_animals
+            pygame.display.update()
 
-    return attribute_probabilities
+    def run(self):
+        self.main_menu()
 
-def update_probabilities(animals, initial_probabilities, conditional_probabilities, responses, error_tolerance=0.1):
-    probabilities = initial_probabilities.copy()
 
-    for attribute, response in responses.items():
-        for animal in probabilities.keys():
-            p_b_given_a = 1 - error_tolerance if animals[animal].get(attribute) == response else error_tolerance
-            p_a = initial_probabilities[animal]
-            p_b = conditional_probabilities[attribute][str(response).lower()]
+class AnimalAkinator:
+    def __init__(self, screen, font):
+        self.screen = screen
+        self.font = font
+        self.current_question_index = 0
+        self.setup_buttons()
 
-            if p_b > 0:
-                probabilities[animal] = (p_b_given_a * p_a) / p_b
+    def setup_buttons(self):
+        # Define button dimensions and positions
+        button_width, button_height = 100, 50
+        screen_width, screen_height = self.screen.get_size()
 
-    total_prob = sum(probabilities.values())
-    if total_prob == 0:
-        # Handle the case where all probabilities are zero
-        print("I am sorry, I could not guess your animal.")
-        quit()
+        # Yes Button
+        self.yes_button_rect = pygame.Rect(
+            (screen_width // 2 - button_width // 2, screen_height // 2 + 60),
+            (button_width, button_height)
+        )
 
-    for animal in probabilities:
-        probabilities[animal] /= total_prob
+        # No Button
+        self.no_button_rect = pygame.Rect(
+            (screen_width // 2 - button_width // 2, screen_height // 2 + 120),
+            (button_width, button_height)
+        )
 
-    return probabilities
+    def display_question(self):
+        question = questions[self.current_question_index]["question"]
+        text = self.font.render(question, True, (0, 0, 0))
+        self.screen.fill((255, 255, 255))  # Clear screen with white
+        self.screen.blit(text, (self.screen.get_width() // 2 - text.get_width() // 2, self.screen.get_height() // 2 - text.get_height() // 2))
+        
+        # Draw yes/no buttons
+        pygame.draw.rect(self.screen, (0, 255, 0), self.yes_button_rect)  # Green button for 'Yes'
+        pygame.draw.rect(self.screen, (255, 0, 0), self.no_button_rect)   # Red button for 'No'
+        
+        yes_text = self.font.render("Yes", True, (0, 0, 0))
+        no_text = self.font.render("No", True, (0, 0, 0))
+        self.screen.blit(yes_text, (self.yes_button_rect.centerx - yes_text.get_width() // 2, self.yes_button_rect.centery - yes_text.get_height() // 2))
+        self.screen.blit(no_text, (self.no_button_rect.centerx - no_text.get_width() // 2, self.no_button_rect.centery - no_text.get_height() // 2))
+        
+        pygame.display.flip()
 
-def ask_random_question(animals, questions_attributes, initial_probabilities, conditional_probabilities, responses, threshold=0.75, error_tolerance=0.1):
-    if not questions_attributes:
-        print("I am sorry, I could not guess your animal.")
-        quit()
+    def handle_answer(self, answer):
+        current_question = questions[self.current_question_index]
+        if answer == "yes":
+            next_index = current_question.get("yes")
+        else:
+            next_index = current_question.get("no")
 
-    # Check if any animal has a significantly higher probability
-    max_prob = max(initial_probabilities.values())
-    best_guess = [animal for animal, prob in initial_probabilities.items() if prob == max_prob]
+        if isinstance(next_index, int):
+            self.current_question_index = next_index
+            self.display_question()
+        else:
+            # End of the game
+            self.end_game(next_index)
 
-    if max_prob >= threshold and len(best_guess) == 1:
-        print("The animal you are thinking of is: " + best_guess[0])
-        quit()
+    def end_game(self, result):
+        text = self.font.render(result, True, (0, 0, 0))
+        self.screen.fill((255, 255, 255))  # Clear screen with white
+        self.screen.blit(text, (self.screen.get_width() // 2 - text.get_width() // 2, self.screen.get_height() // 2 - text.get_height() // 2))
+        pygame.display.flip()
+        pygame.time.wait(3000)  # Wait for 3 seconds before returning to the main menu
 
-    # Randomly select a question
-    question, attribute = random.choice(questions_attributes)
-    questions_attributes.remove((question, attribute))  # Remove the selected question
 
-    ans = input(question + "(y,n)").lower()
-    value = True if ans == "y" else False
-    responses[attribute] = value
 
-    updated_probabilities = update_probabilities(animals, initial_probabilities, conditional_probabilities, responses, error_tolerance)
-
-    return animals, updated_probabilities
-
-# Define questions and corresponding attributes
-questions_attributes = questions_atr
-
-animals = fetch_animals()
-
-# Convert list of animals to a dictionary with animal names as keys
-animal_dict = {animal['Name']: animal for animal in animals}
-
-# Initial probabilities (equal for all animals)
-initial_probabilities = {animal['Name']: 1/len(animals) for animal in animals}
-
-# Calculate conditional probabilities
-conditional_probabilities = calculate_conditional_probabilities(animals)
-
-responses = {}
-
-print("Please think of an animal and I will try to guess it.")
-
-# Main game loop
-while questions_attributes and animals:
-    animals, initial_probabilities = ask_random_question(animal_dict, questions_attributes, initial_probabilities, conditional_probabilities, responses)
-
-conn.close()
+if __name__ == "__main__":
+    game_menu = GameMenu()
+    game_menu.run()
