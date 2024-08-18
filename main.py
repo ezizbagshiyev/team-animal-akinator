@@ -11,23 +11,21 @@ pygame.init()
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Animal Guessing Game")
 
-# Colors
-white = (255, 255, 255)
-black = (0, 0, 0)
-green = (0, 255, 0)
-red = (255, 0, 0)
-
 # Fonts
 font = pygame.font.Font(None, font_size)
 
-# Button dimensions
-button_width = 100
-button_height = 50
 
-# Button positions
-start_button_pos = (screen_width // 2 - button_width // 2, screen_height // 2)
-yes_button_pos = (screen_width // 4 - button_width // 2, screen_height // 2)
-no_button_pos = (3 * screen_width // 4 - button_width // 2, screen_height // 2)
+#Sound
+pygame.mixer.music.load("Theme-sound#2-Stardew Valley.mp3")
+#pygame.mixer.music.load("Theme-sound#1-Minecraft.mp3")
+pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0.5)
+
+#Images
+image_size = (200, 200)
+Animal_img = pygame.image.load("img.png")
+Animal_img = pygame.transform.scale(Animal_img, image_size)
+
 
 # Database connection
 db_file = 'animal-database.accdb'
@@ -167,13 +165,16 @@ def main():
         screen.fill(white)
 
         if not game_started:
-            pygame.draw.rect(screen, green, (*start_button_pos, button_width, button_height))
+            pygame.draw.rect(screen, green, (*start_button_pos, button_width, button_height), border_radius=10)
             draw_text("Start", font, black, screen, start_button_pos[0] + 20, start_button_pos[1] + 12)
+
+            pygame.draw.rect(screen, red, (*sound_button_pos, button_width, button_height), border_radius=10)
+            draw_text("Sound", font, black, screen, sound_button_pos[0] + 10, sound_button_pos[1] + 12)
         else:
             draw_text(question, font, black, screen, 50, 20)
-            pygame.draw.rect(screen, green, (*yes_button_pos, button_width, button_height))
+            pygame.draw.rect(screen, green, (*yes_button_pos, button_width, button_height), border_radius=10)
             draw_text("Yes", font, black, screen, yes_button_pos[0] + 30, yes_button_pos[1] + 10)
-            pygame.draw.rect(screen, red, (*no_button_pos, button_width, button_height))
+            pygame.draw.rect(screen, red, (*no_button_pos, button_width, button_height), border_radius=10)
             draw_text("No", font, black, screen, no_button_pos[0] + 30, no_button_pos[1] + 10)
 
         for event in pygame.event.get():
@@ -184,6 +185,13 @@ def main():
                 if not game_started and start_button_pos[0] <= mouse_pos[0] <= start_button_pos[0] + button_width and start_button_pos[1] <= mouse_pos[1] <= start_button_pos[1] + button_height:
                     game_started = True
                     question, attribute = ask_informative_question(animals, questions_attributes, responses)
+
+                elif not game_started and sound_button_pos[0] <= mouse_pos[0] <= sound_button_pos[0] + button_width and sound_button_pos[1] <= mouse_pos[1] <= sound_button_pos[1] + button_height:
+                    if pygame.mixer.music.get_busy():
+                        pygame.mixer.music.stop()
+                    else:
+                        pygame.mixer.music.play(-1)
+
                 elif game_started:
                     if yes_button_pos[0] <= mouse_pos[0] <= yes_button_pos[0] + button_width and yes_button_pos[1] <= mouse_pos[1] <= yes_button_pos[1] + button_height:
                         responses[attribute] = True
@@ -197,6 +205,7 @@ def main():
                         screen.fill(white)
                         draw_text("The animal you are thinking of is:", font, black, screen, 50, 200)
                         draw_text(animals[0]["Name"], font, black, screen, screen_width // 2 - 40, 250)
+                        screen.blit(Animal_img, (screen_width // 2 - 80, 300))
                         pygame.display.flip()
                         pygame.time.wait(5000)
                         running = False

@@ -10,6 +10,23 @@ background_image = ""
 # Font settings
 font_size = 36
 
+# Colors
+white = (255, 255, 255)
+black = (0, 0, 0)
+green = (0, 255, 0)
+red = (255, 0, 0)
+
+# Button dimensions
+button_width = 100
+button_height = 50
+
+# Button positions
+start_button_pos = (screen_width // 2 - button_width // 2, screen_height // 2)
+yes_button_pos = (screen_width // 4 - button_width // 2, screen_height // 2)
+no_button_pos = (3 * screen_width // 4 - button_width // 2, screen_height // 2)
+sound_button_pos = (screen_width - 120, 10)
+
+
 questions_atr = [
     ("Is your animal a pet?", "IsPet"),
     ("Does your animal have four legs?", "FourLegs"),
