@@ -15,6 +15,8 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 green = (0, 255, 0)
 red = (255, 0, 0)
+dark_green = (0, 180, 0)
+dark_red = (160, 0, 0)
 
 # Button dimensions
 button_width = 100
@@ -24,7 +26,9 @@ button_height = 50
 start_button_pos = (screen_width // 2 - button_width // 2, screen_height // 2)
 yes_button_pos = (screen_width // 4 - button_width // 2, screen_height // 2)
 no_button_pos = (3 * screen_width // 4 - button_width // 2, screen_height // 2)
+reply_button_pos = (screen_width - 120, 10)
 sound_button_pos = (screen_width - 120, 10)
+end_button_pos = (screen_width - 480, 10)
 
 
 questions_atr = [
