@@ -1,6 +1,7 @@
 import os
 import pyodbc
 import pygame
+import random
 from config import *
 
 # Initialize Pygame
@@ -18,10 +19,6 @@ pygame.mixer.music.load("Theme-sound#2-Stardew Valley.mp3")
 pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(0.1)
 
-# Images
-image_size = (200, 200)
-Animal_img = pygame.image.load("img.png")
-Animal_img = pygame.transform.scale(Animal_img, image_size)
 
 # Panda Img
 Panda_img = pygame.image.load("Panda_Idle.png")
@@ -166,20 +163,24 @@ def draw_button(screen, color, rect, text, font, text_color):
 def is_mouse_hovering(rect, mouse_pos):
     return rect[0] <= mouse_pos[0] <= rect[0] + rect[2] and rect[1] <= mouse_pos[1] <= rect[1] + rect[3]
 
+
 def display_end_screen(message, animal_name=None):
+    # Generates random number between 1 and 3 for animal pictures
+    rand_num = (random.randint(1, 3))
     while True:
         mouse_pos = pygame.mouse.get_pos()
         screen.fill(white)
         draw_text(message, font, black, screen, 50, 200) if animal_name else draw_text(message, font, black, screen, 150, 200)
         if animal_name:
+            animal_pic = pygame.image.load('animalpics/' + animal_name + str(rand_num) + '.jpg')
             draw_text(animal_name, font, black, screen, screen_width // 2 - 60, 250)
-            screen.blit(Animal_img, (screen_width // 2 - 100, 300))
+            screen.blit(animal_pic, (screen_width // 2 - 150, 300))
 
         end_button_color = dark_red if is_mouse_hovering((*end_button_pos, button_width, button_height), mouse_pos) else red
         draw_button(screen, end_button_color, (*end_button_pos, button_width, button_height), "End", font, black)
 
         reply_button_color = dark_green if is_mouse_hovering((*reply_button_pos, button_width, button_height), mouse_pos) else green
-        draw_button(screen, reply_button_color, (*reply_button_pos, button_width, button_height), "Reply", font, black)
+        draw_button(screen, reply_button_color, (*reply_button_pos, button_width, button_height), "Again", font, black)
 
         pygame.display.flip()
 

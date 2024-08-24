@@ -33,6 +33,7 @@ end_button_pos = (screen_width - 480, 10)
 
 questions_atr = [
     ("Is your animal a pet?", "IsPet"),
+    ("Does your animal have an exoskeleton?", "HasExo"),
     ("Does your animal have four legs?", "FourLegs"),
     ("Does your animal live in the water?", "LivesWater"),
     ("Does your animal have a tail?", "HasTail"),
