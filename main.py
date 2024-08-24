@@ -208,12 +208,13 @@ def main():
     question = None
     attribute = None
     panda_img_to_display = Panda_img
+    bg_image = pygame.image.load('background_image.jpg')
 
     running = True
 
     try:
         while running:
-            screen.fill(white)
+            screen.blit(bg_image, (0, 0))
             mouse_pos = pygame.mouse.get_pos()
 
             if not game_started:
@@ -224,6 +225,7 @@ def main():
                 draw_button(screen, sound_button_color, (*sound_button_pos, button_width, button_height), "Sound", font, black)
 
             else:
+                screen.fill(white)
                 draw_text(question, font, black, screen, 50, 20)
                 yes_button_color = dark_green if is_mouse_hovering((*yes_button_pos, button_width, button_height), mouse_pos) else green
                 no_button_color = dark_red if is_mouse_hovering((*no_button_pos, button_width, button_height), mouse_pos) else red
