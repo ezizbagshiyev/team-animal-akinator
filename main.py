@@ -20,11 +20,13 @@ pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(0.1)
 
 
-# Panda Img
+# Images
 Panda_img = pygame.image.load("Panda_Idle.png")
 Panda_img = pygame.transform.scale(Panda_img, (160, 220))
 Panda_thinking = pygame.image.load("Panda_Thinking.png")
 Panda_thinking = pygame.transform.scale(Panda_thinking, (160, 220))
+bg_image = pygame.image.load('background_image.jpg')
+bg_image_fade = pygame.image.load('background_image_fade.jpg')
 
 # Database connection
 db_file = 'animal-database.accdb'
@@ -169,7 +171,7 @@ def display_end_screen(message, animal_name=None):
     rand_num = (random.randint(1, 3))
     while True:
         mouse_pos = pygame.mouse.get_pos()
-        screen.fill(white)
+        screen.blit(bg_image_fade, (0, 0))
         draw_text(message, font, black, screen, 50, 200) if animal_name else draw_text(message, font, black, screen, 150, 200)
         if animal_name:
             animal_pic = pygame.image.load('animalpics/' + animal_name + str(rand_num) + '.jpg')
@@ -208,7 +210,7 @@ def main():
     question = None
     attribute = None
     panda_img_to_display = Panda_img
-    bg_image = pygame.image.load('background_image.jpg')
+
 
     running = True
 
@@ -225,7 +227,7 @@ def main():
                 draw_button(screen, sound_button_color, (*sound_button_pos, button_width, button_height), "Sound", font, black)
 
             else:
-                screen.fill(white)
+                screen.blit(bg_image_fade, (0, 0))
                 draw_text(question, font, black, screen, 50, 20)
                 yes_button_color = dark_green if is_mouse_hovering((*yes_button_pos, button_width, button_height), mouse_pos) else green
                 no_button_color = dark_red if is_mouse_hovering((*no_button_pos, button_width, button_height), mouse_pos) else red
