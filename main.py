@@ -1,6 +1,7 @@
 import os
 import pyodbc
 import pygame
+import random
 from config import *
 
 # Initialize Pygame
@@ -14,20 +15,26 @@ pygame.display.set_caption("Animal Guessing Game")
 font = pygame.font.Font(None, font_size)
 
 # Sound
-pygame.mixer.music.load("Theme-sound#2-Stardew Valley.mp3")
+#pygame.mixer.music.load("Theme-sound#1-Minecraft.mp3")
+pygame.mixer.music.load("Music/Theme-sound#2-Stardew Valley.mp3")
 pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(0.1)
 
 # Images
-image_size = (200, 200)
-Animal_img = pygame.image.load("img.png")
-Animal_img = pygame.transform.scale(Animal_img, image_size)
-
-# Panda Img
-Panda_img = pygame.image.load("Panda_Idle.png")
+Panda_img = pygame.image.load("Pandapic/Panda_Idle.png")
 Panda_img = pygame.transform.scale(Panda_img, (160, 220))
-Panda_thinking = pygame.image.load("Panda_Thinking.png")
+Panda_thinking = pygame.image.load("Pandapic/Panda_Thinking.png")
 Panda_thinking = pygame.transform.scale(Panda_thinking, (160, 220))
+Panda_happy = pygame.image.load("Pandapic/Panda_Happy.png")
+Panda_happy = pygame.transform.scale(Panda_happy, (160, 220))
+Panda_sad = pygame.image.load("Pandapic/Panda_Sad.png")
+Panda_sad = pygame.transform.scale(Panda_sad, (160, 180))
+bg_image = pygame.image.load('Background/background_image.jpg')
+bg_image_fade = pygame.image.load('Background/background_image_fade.jpg')
+
+#set Icon
+icon = pygame.image.load("Background/icon.png")
+pygame.display.set_icon(icon)
 
 # Database connection
 db_file = 'animal-database.accdb'
@@ -43,9 +50,23 @@ conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
 def fetch_animals():
+    """
+    Fetches animal data from the database.
+
+    Returns:
+        list: A list of dictionaries containing animal data.
+    """
     cursor.execute('SELECT * FROM Animals')
     columns = [column[0] for column in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+# Preload animal images
+animal_images = {}
+for animal in fetch_animals():
+    for i in range(1, 4):
+        image_path = f'animalpics/{animal["Name"]}{i}.jpg'
+        if os.path.exists(image_path):
+            animal_images[f'{animal["Name"]}{i}'] = pygame.image.load(image_path)
 
 def calculate_conditional_probabilities(animals):
     attribute_probabilities = {}
@@ -153,33 +174,41 @@ def ask_informative_question(animals, questions_attributes, responses):
 
     return question, attribute
 
-def draw_text(text, font, color, surface, x, y):
+def draw_text(text, font, color, surface, rect):
     textobj = font.render(text, True, color)
-    textrect = textobj.get_rect()
-    textrect.topleft = (x, y)
+    textrect = textobj.get_rect(center=(rect[0] + rect[2] // 2, rect[1] + rect[3] // 2))
     surface.blit(textobj, textrect)
 
 def draw_button(screen, color, rect, text, font, text_color):
     pygame.draw.rect(screen, color, rect, border_radius=10)
-    draw_text(text, font, text_color, screen, rect[0] + 20, rect[1] + 12)
+    draw_text(text, font, text_color, screen, rect)
+    pygame.draw.rect(screen, black, rect, 2, border_radius=10)  # Add border for better visual feedback
 
 def is_mouse_hovering(rect, mouse_pos):
     return rect[0] <= mouse_pos[0] <= rect[0] + rect[2] and rect[1] <= mouse_pos[1] <= rect[1] + rect[3]
 
 def display_end_screen(message, animal_name=None):
+    clock = pygame.time.Clock()
+    rand_num = (random.randint(1, 3))
     while True:
+        clock.tick(60)
         mouse_pos = pygame.mouse.get_pos()
-        screen.fill(white)
-        draw_text(message, font, black, screen, 50, 200) if animal_name else draw_text(message, font, black, screen, 150, 200)
+        screen.blit(bg_image_fade, (0, 0))
+        draw_text(message, font, black, screen, (50, 200, 400, 50)) if animal_name else draw_text(message, font, black, screen,(50, 200, 400, 50))
         if animal_name:
-            draw_text(animal_name, font, black, screen, screen_width // 2 - 60, 250)
-            screen.blit(Animal_img, (screen_width // 2 - 100, 300))
+            animal_pic = animal_images.get(f'{animal_name}{rand_num}')
+            if animal_pic:
+                draw_text(animal_name, font, black, screen, (screen_width // 2 - 60, 250, 120, 50))
+                screen.blit(animal_pic, (screen_width // 2 - 150, 300))
+                screen.blit(Panda_happy, (screen_width // 2 + 100, 300))
+        else:
+            screen.blit(Panda_sad, (screen_width // 2 - 80, 420))
 
         end_button_color = dark_red if is_mouse_hovering((*end_button_pos, button_width, button_height), mouse_pos) else red
         draw_button(screen, end_button_color, (*end_button_pos, button_width, button_height), "End", font, black)
 
         reply_button_color = dark_green if is_mouse_hovering((*reply_button_pos, button_width, button_height), mouse_pos) else green
-        draw_button(screen, reply_button_color, (*reply_button_pos, button_width, button_height), "Reply", font, black)
+        draw_button(screen, reply_button_color, (*reply_button_pos, button_width, button_height), "Again", font, black)
 
         pygame.display.flip()
 
@@ -194,7 +223,6 @@ def display_end_screen(message, animal_name=None):
                 elif is_mouse_hovering((*reply_button_pos, button_width, button_height), mouse_pos):
                     main()
 
-
 def main():
     # Initialize variables
     animals = fetch_animals()
@@ -207,12 +235,14 @@ def main():
     question = None
     attribute = None
     panda_img_to_display = Panda_img
+    clock = pygame.time.Clock()
 
     running = True
 
     try:
         while running:
-            screen.fill(white)
+            clock.tick(60)
+            screen.blit(bg_image, (0, 0))
             mouse_pos = pygame.mouse.get_pos()
 
             if not game_started:
@@ -223,7 +253,8 @@ def main():
                 draw_button(screen, sound_button_color, (*sound_button_pos, button_width, button_height), "Sound", font, black)
 
             else:
-                draw_text(question, font, black, screen, 50, 20)
+                screen.blit(bg_image_fade, (0, 0))
+                draw_text(question, font, black, screen, (50, 20, 400, 50))
                 yes_button_color = dark_green if is_mouse_hovering((*yes_button_pos, button_width, button_height), mouse_pos) else green
                 no_button_color = dark_red if is_mouse_hovering((*no_button_pos, button_width, button_height), mouse_pos) else red
 
@@ -238,52 +269,40 @@ def main():
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if not game_started and is_mouse_hovering((*start_button_pos, button_width, button_height), mouse_pos):
-                        game_started = True
-                        question, attribute = ask_informative_question(animals, questions_attributes, responses)
-                    elif not game_started and is_mouse_hovering((*sound_button_pos, button_width, button_height), mouse_pos):
-                        if pygame.mixer.music.get_busy():
-                            pygame.mixer.music.stop()
-                        else:
-                            pygame.mixer.music.play(-1)
-                    elif game_started:
-                        if is_mouse_hovering((*yes_button_pos, button_width, button_height), mouse_pos):
-                            responses[attribute] = True
-                        elif is_mouse_hovering((*no_button_pos, button_width, button_height), mouse_pos):
-                            responses[attribute] = False
-
+                    if not game_started:
+                        if is_mouse_hovering((*start_button_pos, button_width, button_height), mouse_pos):
+                            game_started = True
+                            question, attribute = ask_informative_question(animals, questions_attributes, responses)
+                        elif is_mouse_hovering((*sound_button_pos, button_width, button_height), mouse_pos):
+                            if pygame.mixer.music.get_busy():
+                                pygame.mixer.music.stop()
+                            else:
+                                pygame.mixer.music.play(-1)
+                    else:
                         if attribute is not None:
-                            print(f"Filtering animals with attribute '{attribute}' = {responses[attribute]}")  # Debugging output
+                            if is_mouse_hovering((*yes_button_pos, button_width, button_height), mouse_pos):
+                                responses[attribute] = True
+                            elif is_mouse_hovering((*no_button_pos, button_width, button_height), mouse_pos):
+                                responses[attribute] = False
+                            else:
+                                continue  # Ignore clicks outside buttons
 
-                            # Filter the animals based on the current response
                             animals = [animal for animal in animals if animal.get(attribute) == responses[attribute]]
-
-                            print(f"Animals remaining: {len(animals)}")  # Debugging output
-
-                            # If no animals match the criteria, set animals to an empty list
                             if not animals:
-                                animals = []
-
-                            # Check if no animals remain
-                            if len(animals) == 0:
-                                print("No animals found after filtering.")  # Debugging output
                                 game_started = False
                                 display_end_screen("No animals found.")
                             else:
-                                # Update probabilities
-                                probabilities = update_probabilities(animal_dict, initial_probabilities, conditional_probabilities, responses)
-
+                                probabilities = update_probabilities(animal_dict, initial_probabilities,
+                                                                     conditional_probabilities, responses)
                                 if len(animals) == 1:
                                     game_started = False
-                                    print(f"Animal identified: {animals[0]['Name']}")  # Debugging output
                                     display_end_screen("The animal you are thinking of is:", animals[0]["Name"])
-                                elif len(animals) > 1:
-                                    # Update question after each response
-                                    question, attribute = ask_informative_question(animals, questions_attributes, responses)
+                                else:
+                                    question, attribute = ask_informative_question(animals, questions_attributes,responses)
 
                                     # Handle multiple candidates with similar probabilities
                                     top_probabilities = sorted(probabilities.values(), reverse=True)
-                                    if len(top_probabilities) > 1 and (top_probabilities[0] - top_probabilities[1]) > 0.00001:  # Threshold for "thinking"
+                                    if len(top_probabilities) > 1 and top_probabilities[0] > 0.018:  # Threshold for chaing panda to "thinking"
                                         # Switch to Panda_thinking if the top probability is significantly higher
                                         panda_img_to_display = Panda_thinking
                                     else:
