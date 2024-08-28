@@ -1,6 +1,39 @@
-#All of the questions and attributes used in the game
+# Configuration settings for the game
+
+# Screen settings
+screen_width = 510
+screen_height = 600
+
+# Paths to resources
+background_image = ""
+
+# Font settings
+font_size = 36
+
+# Colors
+white = (255, 255, 255)
+black = (0, 0, 0)
+green = (0, 255, 0)
+red = (255, 0, 0)
+dark_green = (0, 180, 0)
+dark_red = (160, 0, 0)
+
+# Button dimensions
+button_width = 100
+button_height = 50
+
+# Button positions
+start_button_pos = (screen_width // 2 - button_width // 2, screen_height // 2)
+yes_button_pos = (screen_width // 4 - button_width // 2, screen_height // 2)
+no_button_pos = (3 * screen_width // 4 - button_width // 2, screen_height // 2)
+reply_button_pos = (screen_width - 120, 10)
+sound_button_pos = (screen_width - 120, 10)
+end_button_pos = (screen_width - 480, 10)
+
+
 questions_atr = [
     ("Is your animal a pet?", "IsPet"),
+    ("Does your animal have an exoskeleton?", "HasExo"),
     ("Does your animal have four legs?", "FourLegs"),
     ("Does your animal live in the water?", "LivesWater"),
     ("Does your animal have a tail?", "HasTail"),
