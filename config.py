@@ -32,7 +32,6 @@ end_button_pos = (screen_width - 480, 10)
 
 
 questions_atr = [
-    ("Is your animal a pet?", "IsPet"),
     ("Does your animal have an exoskeleton?", "HasExo"),
     ("Does your animal have four legs?", "FourLegs"),
     ("Does your animal live in the water?", "LivesWater"),
@@ -139,7 +138,6 @@ questions_atr = [
     ("Is the animal featured in children’s stories or educational materials?", "ChildStories"),
     ("Is the animal imaginary?", "Imaginary"),
     ("Can the animal swim?", "CanSwim"),
-    ("Is the animal found in pet stores?", "PetStores"),
     ("Is the animal eaten by humans?", "EatenByHumans"),
     ("Is the animal poisonous?", "Poisonous"),
     ("Does the animal create webs?", "CreatesWebs"),
